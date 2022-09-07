@@ -16,13 +16,13 @@ if (code) {                                          \
 char ** tmp_ = NULL;
 #define SWAP(x, y) tmp_ = x; x = y; y = tmp_;
 
-#define PARSE_BYTE (strtoul(optarg, NULL, 10) & 0xFF)
+#define PARSE_UINT (strtoul(optarg, NULL, 10))
 
-enum alignment { LEFT, RIGHT, CENTER };
+typedef enum { LEFT, RIGHT, CENTER } alignment;
 
 uint8_t g_rule = 110;
 size_t g_width = 401, g_height = 400;
-int g_align = CENTER;
+alignment g_align = CENTER;
 
 void init(const char * input, char * buf)
 {
@@ -54,13 +54,11 @@ void fill(const char * src, char * dst, int8_t rule)
     }
 }
 
-void show_line(SDL_Renderer * r, int y, const char * line)
+void render_line(SDL_Renderer * r, int y, const char * line)
 {
-    // SDL_RenderClear(r);
     for (size_t x = 1; x <= g_width; ++x) {
         if (line[x]) SDL_RenderDrawPoint(r, x, y);
     }
-    SDL_RenderPresent(r);
 }
 
 int parse_args(int argc, char** argv)
@@ -69,13 +67,13 @@ int parse_args(int argc, char** argv)
     while((c = getopt(argc, argv, ":r:w:h:LR")) != -1) {
         switch(c) {
         case 'r':
-            g_rule = PARSE_BYTE;
+            g_rule = PARSE_UINT & 0xFF;
             break;
         case 'w':
-            g_width = PARSE_BYTE;
+            g_width = PARSE_UINT;
             break;
         case 'h':
-            g_height = PARSE_BYTE;
+            g_height = PARSE_UINT;
             break;
         case 'L':
             g_align = LEFT;
@@ -103,35 +101,41 @@ int parse_args(int argc, char** argv)
 
 int main(int argc, char ** argv) 
 {
+    int optind = parse_args(argc, argv); // this sets global vars and should run first
     char * buf1 = calloc(sizeof(char), g_width + 2);
     char * buf2 = calloc(sizeof(char), g_width + 2);
+    if (!buf1 || !buf2) {
+        fprintf(stderr, "Error allocating memory for buffers\n");
+        exit(69);
+    }
+
     char ** current = &buf1;
     char ** next = &buf2;
-    init(argv[parse_args(argc, argv)], *current);
+    init(argv[optind], *current);
 
     SDL_Window *w = NULL;
     SDL_Renderer *r = NULL;
-    SDL_Event *e = NULL;
+    SDL_Event e;
 
     CHECK(SDL_Init(SDL_INIT_VIDEO), "Error initializing SDL");
-    CHECK(!(w = SDL_CreateWindow("sdl_window", 100, 100, g_width, g_height,
-                SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS)), "Error opening window");
+    CHECK(!(w = SDL_CreateWindow("sdl_window", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                g_width, g_height, SDL_WINDOW_OPENGL)), "Error opening window");
     CHECK(!(r = SDL_CreateRenderer(w, -1, SDL_RENDERER_ACCELERATED)), "Error creating renderer");
 
     SDL_SetRenderDrawColor(r, 0xFF, 0xFF, 0xFF, 0xFF);
     SDL_RenderFillRect(r, NULL);
     SDL_SetRenderDrawColor(r, 0, 0, 0, 0xFF);
 
-    show_line(r, 1, *current);
+    render_line(r, 1, *current);
     for (int y = 2; y <= g_height; ++y) {
         fill(*current, *next, g_rule);
-        show_line(r, y, *next);
+        render_line(r, y, *next);
         SWAP(current, next);
-        SDL_Delay(10);
     }
+    SDL_RenderPresent(r);
 
-    while (SDL_WaitEvent(e))
-        if (e->type == SDL_KEYDOWN) break;
+    while (SDL_WaitEvent(&e))
+        if (e.type == SDL_KEYDOWN) break;
 
 exit:
     SDL_DestroyRenderer(r);
