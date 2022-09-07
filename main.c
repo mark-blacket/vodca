@@ -27,6 +27,11 @@ alignment g_align = CENTER;
 void init(const char * input, char * buf)
 {
     char * d = NULL;
+    size_t l = strlen(input);
+    if (l > g_width) {
+        fputs("Input too long\n", stderr);
+        exit(69);
+    }
     switch (g_align) {
     case LEFT:
         d = buf + 1;
@@ -41,16 +46,16 @@ void init(const char * input, char * buf)
     for (const char * c = input; *c != 0; ++c, ++d) {
         if (*c == '0' || *c == '1') *d = *c - '0'; 
         else {
-            puts("Input must be a binary number\n");
+            fputs("Input must be a binary number\n", stderr);
             exit(69);
         }
     }
 }
     
-void fill(const char * src, char * dst, int8_t rule)
+void fill_next(const char * src, char * dst)
 {
     for(size_t i = 1; i <= g_width; ++i) {
-        dst[i] = (rule >> (src[i - 1] << 2 | src[i] << 1 | src[i + 1])) & 1;
+        dst[i] = (g_rule >> (src[i - 1] << 2 | src[i] << 1 | src[i + 1])) & 1;
     }
 }
 
@@ -92,7 +97,7 @@ int parse_args(int argc, char** argv)
     }
 
     if (err || (optind >= argc)) {
-        fprintf(stderr, "Usage: vodca [-r rule] [-w width] [-h height] [-l] input\n");
+        fputs("Usage: vodca [-r rule] [-w width] [-h height] [-l] input\n", stderr);
         exit(69);
     }
     
@@ -105,7 +110,7 @@ int main(int argc, char ** argv)
     char * buf1 = calloc(sizeof(char), g_width + 2);
     char * buf2 = calloc(sizeof(char), g_width + 2);
     if (!buf1 || !buf2) {
-        fprintf(stderr, "Error allocating memory for buffers\n");
+        fputs("Error allocating memory for buffers\n", stderr);
         exit(69);
     }
 
@@ -128,7 +133,7 @@ int main(int argc, char ** argv)
 
     render_line(r, 1, *current);
     for (int y = 2; y <= g_height; ++y) {
-        fill(*current, *next, g_rule);
+        fill_next(*current, *next);
         render_line(r, y, *next);
         SWAP(current, next);
     }
