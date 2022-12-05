@@ -1,4 +1,4 @@
-## vodca - variable one-dimensional cellular automaton
+# vodca - variable one-dimensional cellular automaton
 
 Takes a binary pattern as an input, recursively applies the rule and visualises it using SDL
 A python script (pattern.py) can be used to generate randomized input patterns
