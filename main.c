@@ -97,7 +97,7 @@ int parse_args(int argc, char** argv)
     }
 
     if (err || (optind >= argc)) {
-        fputs("Usage: vodca [-r rule] [-w width] [-h height] [-l] input\n", stderr);
+        fputs("Usage: vodca [-r rule] [-w width] [-h height] [-L/R] input\n", stderr);
         exit(69);
     }
     
