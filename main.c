@@ -61,8 +61,8 @@ void fill_next(const char * src, char * dst)
 
 void render_line(SDL_Renderer * r, int y, const char * line)
 {
-    for (size_t x = 1; x <= g_width; ++x) {
-        if (line[x]) SDL_RenderDrawPoint(r, x, y);
+    for (size_t x = 0; x < g_width; ++x) {
+        if (line[x + 1]) SDL_RenderDrawPoint(r, x, y);
     }
 }
 
@@ -131,8 +131,8 @@ int main(int argc, char ** argv)
     SDL_RenderFillRect(r, NULL);
     SDL_SetRenderDrawColor(r, 0, 0, 0, 0xFF);
 
-    render_line(r, 1, *current);
-    for (int y = 2; y <= g_height; ++y) {
+    render_line(r, 0, *current);
+    for (int y = 1; y < g_height; ++y) {
         fill_next(*current, *next);
         render_line(r, y, *next);
         SWAP(current, next);
@@ -140,7 +140,8 @@ int main(int argc, char ** argv)
     SDL_RenderPresent(r);
 
     while (SDL_WaitEvent(&e))
-        if (e.type == SDL_KEYDOWN) break;
+        if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_RETURN)
+            break;
 
 exit:
     SDL_DestroyRenderer(r);
